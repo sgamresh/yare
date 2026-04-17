@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Yare Automotive Estimate Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="./src/css/app.css">
+  </head>
+  <body id="app">
+    <div class="workspace-shell">
+      <aside class="editor-rail">
+        <header class="rail-header">
+          <p class="eyebrow">Automotive Estimate Generator</p>
+          <h1>Workshop-ready static invoice app</h1>
+          <p class="rail-copy">
+            Configure workshop details, edit parts and labour rows, preview the final estimate live,
+            then export a PDF or print directly from the browser.
+          </p>
+          <p id="boot-error" class="error-banner" hidden></p>
+        </header>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Business Profile</h2>
+            <button type="button" class="ghost-button" data-open-file="logo">Upload logo</button>
+          </div>
+          <div class="field-grid two-up">
+            <label>
+              <span>Title bar text</span>
+              <input data-bind="app.displayTitle" placeholder="Eatimate">
+            </label>
+            <label>
+              <span>Business name</span>
+              <input data-bind="business.businessName">
+            </label>
+            <label class="full-span">
+              <span>Address line 1</span>
+              <input data-bind="business.addressLine1">
+            </label>
+            <label class="full-span">
+              <span>Address line 2</span>
+              <input data-bind="business.addressLine2">
+            </label>
+            <label>
+              <span>City / state</span>
+              <input data-bind="business.cityState">
+            </label>
+            <label>
+              <span>Contact no</span>
+              <input data-bind="business.contactNo">
+            </label>
+            <label>
+              <span>Email</span>
+              <input data-bind="business.email">
+            </label>
+            <label>
+              <span>GSTIN</span>
+              <input data-bind="business.gstIn">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Customer & Vehicle</h2>
+          </div>
+          <div class="field-grid two-up">
+            <label>
+              <span>Regd no</span>
+              <input data-bind="customerVehicle.regdNo">
+            </label>
+            <label>
+              <span>Estimate date</span>
+              <input data-bind="customerVehicle.estimateDate" type="date">
+            </label>
+            <label>
+              <span>Customer name</span>
+              <input data-bind="customerVehicle.customerName">
+            </label>
+            <label>
+              <span>Due date</span>
+              <input data-bind="customerVehicle.dueDate" type="date">
+            </label>
+            <label>
+              <span>Odo meter</span>
+              <input data-bind="customerVehicle.odoMeter">
+            </label>
+            <label>
+              <span>Invoice no</span>
+              <input data-bind="customerVehicle.invoiceNo">
+            </label>
+            <label>
+              <span>Mobile no</span>
+              <input data-bind="customerVehicle.mobileNo">
+            </label>
+            <label>
+              <span>Business GSTIN override</span>
+              <input data-bind="customerVehicle.gstIn">
+            </label>
+            <label class="full-span">
+              <span>Customer GST no</span>
+              <input data-bind="customerVehicle.customerGstNo">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Catalog Manager</h2>
+            <div class="button-row">
+              <button type="button" class="ghost-button" id="load-sample-catalog">Load sample catalog</button>
+              <button type="button" class="ghost-button" data-open-file="importCatalog">Import JSON</button>
+            </div>
+          </div>
+
+          <div class="catalog-block">
+            <div class="subsection-heading">
+              <h3>Parts catalog</h3>
+              <div class="button-row">
+                <button type="button" class="ghost-button" data-catalog-add="parts">Add selected</button>
+                <button type="button" class="ghost-button" data-catalog-clear="parts">Clear</button>
+              </div>
+            </div>
+            <label class="search-field">
+              <span>Search parts</span>
+              <input data-catalog-query="parts" placeholder="Search by part name, code, or category">
+            </label>
+            <div class="table-scroll">
+              <table class="catalog-table">
+                <thead>
+                  <tr>
+                    <th>Select</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>SAC</th>
+                    <th>Qty</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="parts-catalog-rows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="catalog-block">
+            <div class="subsection-heading">
+              <h3>Labour catalog</h3>
+              <div class="button-row">
+                <button type="button" class="ghost-button" data-catalog-add="labour">Add selected</button>
+                <button type="button" class="ghost-button" data-catalog-clear="labour">Clear</button>
+              </div>
+            </div>
+            <label class="search-field">
+              <span>Search labour</span>
+              <input data-catalog-query="labour" placeholder="Search by job name, code, or category">
+            </label>
+            <div class="table-scroll">
+              <table class="catalog-table">
+                <thead>
+                  <tr>
+                    <th>Select</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>SAC</th>
+                    <th>Qty</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="labour-catalog-rows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Invoice Row Editor</h2>
+          </div>
+          <div class="editor-section">
+            <div class="subsection-heading">
+              <h3>Parts rows</h3>
+              <button type="button" class="ghost-button" data-add-manual="parts">Add manual row</button>
+            </div>
+            <div class="table-scroll">
+              <table class="editor-table parts-editor">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Description</th>
+                    <th>SAC</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Taxable override</th>
+                    <th>CGST %</th>
+                    <th>SGST %</th>
+                    <th>Disc %</th>
+                    <th>Taxable</th>
+                    <th>Tax</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="parts-editor-rows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="editor-section">
+            <div class="subsection-heading">
+              <h3>Labour rows</h3>
+              <button type="button" class="ghost-button" data-add-manual="labour">Add manual row</button>
+            </div>
+            <div class="table-scroll">
+              <table class="editor-table labour-editor">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Description</th>
+                    <th>SAC</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Taxable override</th>
+                    <th>CGST %</th>
+                    <th>SGST %</th>
+                    <th>Taxable</th>
+                    <th>Tax</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="labour-editor-rows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Footer & Print Settings</h2>
+            <div class="button-row">
+              <button type="button" class="ghost-button" data-open-file="signature">Upload signature</button>
+              <button type="button" class="ghost-button" data-open-file="stamp">Upload stamp</button>
+            </div>
+          </div>
+          <div class="field-grid two-up">
+            <label class="full-span">
+              <span>Terms and conditions</span>
+              <textarea data-bind="footerSettings.termsText" rows="4"></textarea>
+            </label>
+            <label class="full-span">
+              <span>Footer note</span>
+              <textarea data-bind="footerSettings.footerNote" rows="2"></textarea>
+            </label>
+            <label>
+              <span>Parts max rows</span>
+              <input id="parts-max-rows" type="number" min="0" step="1">
+            </label>
+            <label>
+              <span>Labour max rows</span>
+              <input id="labour-max-rows" type="number" min="0" step="1">
+            </label>
+            <label class="inline-check">
+              <input id="allow-blank-rows" type="checkbox">
+              <span>Fill blank rows for print layout</span>
+            </label>
+            <label class="inline-check">
+              <input id="roundoff-enabled" type="checkbox">
+              <span>Enable round off</span>
+            </label>
+            <label>
+              <span>Round off mode</span>
+              <select id="roundoff-mode">
+                <option value="nearest">Nearest</option>
+                <option value="up">Up</option>
+                <option value="down">Down</option>
+              </select>
+            </label>
+            <label>
+              <span>Round off decimals</span>
+              <input id="roundoff-decimals" type="number" min="0" step="1">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Export & QA</h2>
+          </div>
+          <div class="summary-strip">
+            <div>
+              <span>Parts total</span>
+              <strong id="summary-parts-total">0.00</strong>
+            </div>
+            <div>
+              <span>Labour total</span>
+              <strong id="summary-labour-total">0.00</strong>
+            </div>
+            <div>
+              <span>Grand total</span>
+              <strong id="summary-grand-total">0.00</strong>
+            </div>
+          </div>
+          <p id="validation-status" class="status-pill">Ready for export</p>
+          <div class="button-row wrap">
+            <button type="button" id="export-pdf" class="primary-button">Export PDF</button>
+            <button type="button" id="print-invoice" class="ghost-button">Print</button>
+            <button type="button" id="export-draft" class="ghost-button">Export draft JSON</button>
+            <button type="button" id="export-catalog" class="ghost-button">Export catalog JSON</button>
+            <button type="button" class="ghost-button" data-open-file="importDraft">Import draft JSON</button>
+            <button type="button" id="reset-to-sample" class="ghost-button">Reset sample data</button>
+          </div>
+          <p id="action-loading" class="loading-copy"></p>
+          <p id="action-error" class="error-banner"></p>
+          <div class="validation-columns">
+            <div>
+              <h3>Required field issues</h3>
+              <ul id="validation-errors"></ul>
+            </div>
+            <div>
+              <h3>Layout warnings</h3>
+              <ul id="validation-warnings"></ul>
+            </div>
+          </div>
+        </section>
+
+        <input id="file-logo" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        <input id="file-signature" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        <input id="file-stamp" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        <input id="file-import-draft" type="file" accept="application/json,.json" hidden>
+        <input id="file-import-catalog" type="file" accept="application/json,.json" hidden>
+      </aside>
+
+      <main class="preview-stage">
+        <div class="preview-header">
+          <div>
+            <p class="eyebrow">Live Preview</p>
+            <h2>Exact estimate layout</h2>
+          </div>
+        </div>
+
+        <div class="preview-canvas">
+          <article id="invoice-preview" class="invoice-sheet">
+            <header class="invoice-top">
+              <div class="brand-mark">
+                <img id="preview-logo" alt="Business logo">
+              </div>
+              <div class="brand-copy">
+                <h1 id="pvBusinessName">Yare Automotive Workshop</h1>
+                <p id="pvAddress1"></p>
+                <p id="pvAddress2"></p>
+                <p>Mob.: <span id="pvContact"></span></p>
+                <p>Email: <span id="pvEmail"></span></p>
+              </div>
+            </header>
+
+            <div class="invoice-title-bar">
+              <span id="pvTitle">Eatimate</span>
+            </div>
+
+            <section class="meta-grid">
+              <div class="meta-table">
+                <div class="meta-row"><span>Regd No</span><strong id="pvRegdNo">-</strong></div>
+                <div class="meta-row"><span>Name</span><strong id="pvCustomerName">-</strong></div>
+                <div class="meta-row"><span>Odo Meter</span><strong id="pvOdoMeter">-</strong></div>
+                <div class="meta-row"><span>Mobile no</span><strong id="pvMobile">-</strong></div>
+                <div class="meta-row"><span>Customer GST No</span><strong id="pvCustomerGst">-</strong></div>
+              </div>
+              <div class="meta-table">
+                <div class="meta-row"><span>Estimate Date</span><strong id="pvEstimateDate">-</strong></div>
+                <div class="meta-row"><span>Due Date</span><strong id="pvDueDate">-</strong></div>
+                <div class="meta-row"><span>Invoice No</span><strong id="pvInvoiceNo">-</strong></div>
+                <div class="meta-row"><span>GST IN</span><strong id="pvMetaGstin">-</strong></div>
+              </div>
+            </section>
+
+            <section class="invoice-section">
+              <table class="invoice-table">
+                <thead>
+                  <tr>
+                    <th>Sl.</th>
+                    <th>Description</th>
+                    <th>SAC</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Taxable Amt</th>
+                    <th>CGST %</th>
+                    <th>CGST Amt</th>
+                    <th>SGST %</th>
+                    <th>SGST Amt</th>
+                    <th>Disc %</th>
+                    <th>Total Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-parts-rows"></tbody>
+              </table>
+            </section>
+
+            <section class="totals-grid">
+              <div class="totals-card">
+                <div class="totals-row"><span>Parts Net Taxable Amount</span><strong id="pvPartsTaxableTotal">0.00</strong></div>
+                <div class="totals-row"><span>Parts Total Tax</span><strong id="pvPartsTaxTotal">0.00</strong></div>
+                <div class="totals-row highlight"><span>Final Parts Invoice Amount</span><strong id="pvFinalPartsAmount">0.00</strong></div>
+              </div>
+            </section>
+
+            <section class="invoice-section labour-heading">
+              <div class="section-banner">Labour Charges</div>
+              <table class="invoice-table">
+                <thead>
+                  <tr>
+                    <th>Sl.</th>
+                    <th>Description</th>
+                    <th>SAC</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Taxable Amt</th>
+                    <th>CGST %</th>
+                    <th>CGST Amt</th>
+                    <th>SGST %</th>
+                    <th>SGST Amt</th>
+                    <th>Disc %</th>
+                    <th>Total Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-labour-rows"></tbody>
+              </table>
+            </section>
+
+            <section class="totals-grid bottom">
+              <div class="totals-card">
+                <div class="totals-row"><span>Labour Net Taxable Amount</span><strong id="pvLabourTaxableTotal">0.00</strong></div>
+                <div class="totals-row"><span>Labour Total Tax</span><strong id="pvLabourTaxTotal">0.00</strong></div>
+                <div class="totals-row"><span>Final Labour Invoice Amount</span><strong id="pvFinalLabourAmount">0.00</strong></div>
+                <div class="totals-row"><span>Gross Amount</span><strong id="pvGrossAmount">0.00</strong></div>
+                <div class="totals-row grand"><span>Grand Total</span><strong id="pvGrandTotal">0</strong></div>
+              </div>
+            </section>
+
+            <section class="terms-block">
+              <h3>Terms and Conditions</h3>
+              <p id="pvTermsText"></p>
+            </section>
+
+            <footer class="invoice-footer">
+              <p id="pvFooterNote" class="footer-note"></p>
+              <div class="footer-signoff">
+                <div class="stamp-slot">
+                  <img id="preview-stamp" alt="Stamp">
+                </div>
+                <div class="signature-slot">
+                  <img id="preview-signature" alt="Signature">
+                  <span>Authorized Signatory</span>
+                </div>
+              </div>
+            </footer>
+          </article>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="./src/js/bootstrap.js"></script>
+  </body>
+</html>

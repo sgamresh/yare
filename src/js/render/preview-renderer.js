@@ -91,6 +91,7 @@ function renderBusiness(root, model) {
   const line2 = [safeText(model.business.addressLine2).trim(), safeText(model.business.cityState).trim()]
     .filter(Boolean)
     .join(", ");
+  setText(root, "pvTitle", model.title);
   setText(root, "pvBusinessName", model.business.businessName);
   setText(root, "pvAddress1", model.business.addressLine1);
   setText(root, "pvAddress2", line2);
