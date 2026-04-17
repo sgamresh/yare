@@ -1,0 +1,8 @@
+{
+  "name": "yare-automotive-invoice",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "qa:smoke": "node qa/smoke-qa.mjs"
+  }
+}
