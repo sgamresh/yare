@@ -1,6 +1,6 @@
 import { calculateRowAmounts } from "../calculation/invoice-calculations.js";
 import { formatCurrencyInr, safeText } from "../core/utils.js";
-import { DEFAULT_CATALOG_PAYLOAD } from "./sample-data.js";
+import { SAMPLE_CATALOG_CSV } from "./sample-data.js";
 
 function downloadTextFile(fileName, content, mimeType = "application/json") {
   const blob = new Blob([content], { type: mimeType });
@@ -21,6 +21,116 @@ function readFileAsText(file) {
     reader.onerror = () => reject(new Error(`Could not read ${file?.name || "file"}.`));
     reader.readAsText(file);
   });
+}
+
+function isCsvFile(file) {
+  const name = safeText(file?.name).toLowerCase();
+  return name.endsWith(".csv") || file?.type === "text/csv";
+}
+
+function parseCsvLine(line) {
+  const cells = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const next = line[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      cells.push(current);
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  cells.push(current);
+  return cells.map((cell) => cell.trim());
+}
+
+function toCatalogPayloadFromCsv(csvText) {
+  const lines = safeText(csvText)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length < 2) {
+    throw new Error("CSV catalog file must include a header row and at least one item row.");
+  }
+
+  const headers = parseCsvLine(lines[0]);
+  const requiredHeaders = [
+    "type",
+    "id",
+    "name",
+    "description",
+    "category",
+    "subcategory",
+    "sacCode",
+    "qty",
+    "rate",
+    "discountPercent",
+    "cgstRate",
+    "sgstRate",
+    "isActive"
+  ];
+
+  requiredHeaders.forEach((header) => {
+    if (!headers.includes(header)) {
+      throw new Error(`CSV catalog file is missing required column '${header}'.`);
+    }
+  });
+
+  const items = lines.slice(1).map((line, rowIndex) => {
+    const values = parseCsvLine(line);
+    const row = Object.fromEntries(headers.map((header, index) => [header, values[index] ?? ""]));
+    const normalizedType = row.type === "labour" ? "labour" : row.type === "part" ? "part" : "";
+
+    if (!normalizedType) {
+      throw new Error(`CSV row ${rowIndex + 2} has invalid type '${row.type}'. Use 'part' or 'labour'.`);
+    }
+
+    return {
+      id: row.id,
+      type: normalizedType,
+      name: row.name,
+      description: row.description,
+      category: row.category,
+      subcategory: row.subcategory,
+      sacCode: row.sacCode,
+      defaults: {
+        qty: Number(row.qty || 0),
+        rate: Number(row.rate || 0),
+        discountPercent: Number(row.discountPercent || 0),
+        cgstRate: Number(row.cgstRate || 0),
+        sgstRate: Number(row.sgstRate || 0)
+      },
+      status: {
+        isActive: String(row.isActive).toLowerCase() !== "false"
+      }
+    };
+  });
+
+  return {
+    schemaVersion: "1.0.0",
+    exportedAt: new Date().toISOString(),
+    catalogs: {
+      parts: items.filter((item) => item.type === "part"),
+      labour: items.filter((item) => item.type === "labour")
+    }
+  };
 }
 
 function toInputNumber(value, fallback = 0) {
@@ -368,7 +478,8 @@ export function mountAppUi(app, root = document) {
       }
       if (target === hiddenInputs.importCatalog && target.files?.[0]) {
         const content = await readFileAsText(target.files[0]);
-        app.io.importCatalog(content, { mode: "merge" });
+        const payload = isCsvFile(target.files[0]) ? toCatalogPayloadFromCsv(content) : content;
+        app.io.importCatalog(payload, { mode: "merge" });
       }
     } catch (error) {
       q("#action-error").textContent = error.message;
@@ -386,6 +497,10 @@ export function mountAppUi(app, root = document) {
     const button = target.closest("button");
     if (!button) {
       return;
+    }
+
+    if (button.closest("summary")) {
+      event.preventDefault();
     }
 
     q("#action-error").textContent = "";
@@ -424,11 +539,6 @@ export function mountAppUi(app, root = document) {
       return;
     }
 
-    if (button.id === "load-sample-catalog") {
-      app.io.importCatalog(DEFAULT_CATALOG_PAYLOAD, { mode: "replace" });
-      return;
-    }
-
     if (button.id === "export-draft") {
       downloadTextFile("invoice-draft.json", app.io.exportInvoiceDraft());
       return;
@@ -436,6 +546,11 @@ export function mountAppUi(app, root = document) {
 
     if (button.id === "export-catalog") {
       downloadTextFile("invoice-catalog.json", app.io.exportCatalog("all"));
+      return;
+    }
+
+    if (button.id === "download-sample-csv") {
+      downloadTextFile("catalog-sample-format.csv", SAMPLE_CATALOG_CSV, "text/csv;charset=utf-8");
       return;
     }
 

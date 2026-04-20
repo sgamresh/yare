@@ -1,133 +1,3 @@
-export const DEFAULT_CATALOG_PAYLOAD = {
-  schemaVersion: "1.0.0",
-  exportedAt: "2026-04-17T00:00:00.000Z",
-  catalogs: {
-    parts: [
-      {
-        id: "part-shock-absorber-front",
-        type: "part",
-        name: "Shock absorber front",
-        description: "Shock absorber front",
-        category: "Suspension",
-        subcategory: "Front assembly",
-        sacCode: "8708",
-        defaults: {
-          qty: 2,
-          rate: 1077.12,
-          discountPercent: 0,
-          cgstRate: 9,
-          sgstRate: 9
-        },
-        status: { isActive: true }
-      },
-      {
-        id: "part-hand-brake-cable",
-        type: "part",
-        name: "Hand brake cable",
-        description: "Hand brake cable",
-        category: "Braking",
-        subcategory: "Cable",
-        sacCode: "8708",
-        defaults: {
-          qty: 1,
-          rate: 1059.32,
-          discountPercent: 0,
-          cgstRate: 9,
-          sgstRate: 9
-        },
-        status: { isActive: true }
-      },
-      {
-        id: "part-link-rod",
-        type: "part",
-        name: "Link rod set",
-        description: "Link rod set",
-        category: "Suspension",
-        subcategory: "Linkage",
-        sacCode: "8708",
-        defaults: {
-          qty: 1,
-          rate: 1680,
-          discountPercent: 5,
-          cgstRate: 9,
-          sgstRate: 9
-        },
-        status: { isActive: true }
-      },
-      {
-        id: "part-bush-kit",
-        type: "part",
-        name: "Suspension bush kit",
-        description: "Suspension bush kit",
-        category: "Suspension",
-        subcategory: "Bushes",
-        sacCode: "8708",
-        defaults: {
-          qty: 1,
-          rate: 850,
-          discountPercent: 0,
-          cgstRate: 9,
-          sgstRate: 9
-        },
-        status: { isActive: true }
-      }
-    ],
-    labour: [
-      {
-        id: "lab-shock-change",
-        type: "labour",
-        name: "Shock absorber change",
-        description: "Shock absorber change",
-        category: "Workshop Labour",
-        subcategory: "Suspension work",
-        sacCode: "998714",
-        defaults: {
-          qty: 2,
-          rate: 300,
-          discountPercent: 0,
-          cgstRate: 9,
-          sgstRate: 9
-        },
-        status: { isActive: true }
-      },
-      {
-        id: "lab-wheel-alignment",
-        type: "labour",
-        name: "Wheel alignment",
-        description: "Wheel alignment",
-        category: "Workshop Labour",
-        subcategory: "Alignment",
-        sacCode: "998714",
-        defaults: {
-          qty: 1,
-          rate: 900,
-          discountPercent: 0,
-          cgstRate: 9,
-          sgstRate: 9
-        },
-        status: { isActive: true }
-      },
-      {
-        id: "lab-road-test",
-        type: "labour",
-        name: "Road test and quality check",
-        description: "Road test and quality check",
-        category: "Workshop Labour",
-        subcategory: "Inspection",
-        sacCode: "998714",
-        defaults: {
-          qty: 1,
-          rate: 450,
-          discountPercent: 0,
-          cgstRate: 9,
-          sgstRate: 9
-        },
-        status: { isActive: true }
-      }
-    ]
-  }
-};
-
 function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -146,75 +16,47 @@ async function loadBundledLogoDataUrl() {
   return blobToDataUrl(blob);
 }
 
+export const SAMPLE_CATALOG_CSV = [
+  "type,id,name,description,category,subcategory,sacCode,qty,rate,discountPercent,cgstRate,sgstRate,isActive",
+  "part,part-001,Shock absorber front,Shock absorber front,Suspension,Front assembly,8708,2,1077.12,0,9,9,true",
+  "part,part-002,Hand brake cable,Hand brake cable,Braking,Cable,8708,1,1059.32,0,9,9,true",
+  "labour,lab-001,Shock absorber change,Shock absorber change,Workshop Labour,Suspension work,998714,2,300,0,9,9,true",
+  "labour,lab-002,Wheel alignment,Wheel alignment,Workshop Labour,Alignment,998714,1,900,0,9,9,true"
+].join("\n");
+
 export async function applySampleData(app) {
   const { actions, store } = app;
 
   store.update((draft) => {
-    draft.app.displayTitle = "Eatimate";
+    draft.app.displayTitle = "Estimate";
   });
 
   actions.patchBusiness({
-    businessName: "Yare Automotive Workshop",
-    addressLine1: "Plot 24, Service Road, Rasulgarh",
-    addressLine2: "Near Palasuni Flyover",
-    cityState: "Bhubaneswar, Odisha 751010",
+    businessName: "Yare Automotive",
+    addressLine1: "Back Side of Gill Complex",
+    addressLine2: "Manguli",
+    cityState: "Cuttack, Odisha",
     contactNo: "7978738373",
-    email: "support@yareauto.in",
+    email: "yareautomotives@gmail.com",
     gstIn: "21BRWPM4747A1ZR"
   });
 
   actions.patchCustomerVehicle({
-    regdNo: "OD02BS7671",
-    customerName: "ZEN Plus Pvt Ltd",
-    odoMeter: "82,410 km",
-    mobileNo: "7749081451",
-    customerGstNo: "21AAACZ5498Q1Z3",
-    estimateDate: "2026-04-17",
-    dueDate: "2026-04-20",
-    invoiceNo: "YA-26/27-00000081",
-    gstIn: "21BRWPM4747A1ZR"
+    regdNo: "",
+    customerName: "",
+    odoMeter: "",
+    mobileNo: "",
+    customerGstNo: "",
+    estimateDate: "",
+    dueDate: "",
+    invoiceNo: "",
+    gstIn: ""
   });
 
-  actions.setFooterField(
-    "termsText",
-    [
-      "1. Payment is due within 5 days of the estimate date.",
-      "2. Rates are valid for 5 days and subject to parts availability.",
-      "3. Any additional work found during dismantling will be shared for approval."
-    ].join("\n")
-  );
-  actions.setFooterField(
-    "footerNote",
-    "* Note: This is a system generated invoice. No signature required."
-  );
-  actions.setTableVisualConfig({
-    maxRows: { parts: 8, labour: 5 },
-    allowBlankRows: true
-  });
-
-  actions.replaceCatalogSection("parts", DEFAULT_CATALOG_PAYLOAD.catalogs.parts);
-  actions.replaceCatalogSection("labour", DEFAULT_CATALOG_PAYLOAD.catalogs.labour);
   actions.clearInvoiceRows("parts");
   actions.clearInvoiceRows("labour");
-
-  actions.addRowsFromCatalog("parts", [
-    "part-shock-absorber-front",
-    "part-hand-brake-cable",
-    "part-link-rod"
-  ]);
-  actions.addRowsFromCatalog("labour", [
-    "lab-shock-change",
-    "lab-wheel-alignment"
-  ]);
-
-  actions.addManualRow("labour", {
-    description: "Road test and suspension quality check",
-    sacCode: "998714",
-    qty: 1,
-    rate: 450,
-    cgstRate: 9,
-    sgstRate: 9
-  });
+  actions.replaceCatalogSection("parts", []);
+  actions.replaceCatalogSection("labour", []);
 
   try {
     const dataUrl = await loadBundledLogoDataUrl();
