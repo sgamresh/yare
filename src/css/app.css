@@ -49,18 +49,49 @@ img {
 }
 
 .workspace-shell {
+  --editor-rail-width: 540px;
   display: grid;
-  grid-template-columns: minmax(420px, 540px) 1fr;
+  grid-template-columns: minmax(320px, var(--editor-rail-width)) 12px minmax(0, 1fr);
   min-height: 100vh;
 }
 
 .editor-rail {
+  min-width: 0;
   padding: 28px 24px 48px;
   border-right: 1px solid rgba(42, 33, 29, 0.12);
   background:
     linear-gradient(180deg, rgba(255, 253, 248, 0.96), rgba(247, 241, 232, 0.96)),
     var(--panel);
   overflow-y: auto;
+}
+
+.editor-rail-resizer {
+  position: relative;
+  cursor: col-resize;
+  touch-action: none;
+  background: linear-gradient(180deg, rgba(42, 33, 29, 0.08), rgba(42, 33, 29, 0.14));
+}
+
+.editor-rail-resizer::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 54px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: rgba(248, 235, 223, 0.88);
+}
+
+.workspace-shell.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.workspace-shell.is-resizing .editor-rail,
+.workspace-shell.is-resizing .preview-stage {
+  pointer-events: none;
 }
 
 .preview-stage {
@@ -675,6 +706,10 @@ img {
     border-right: 0;
     border-bottom: 1px solid rgba(42, 33, 29, 0.12);
   }
+
+  .editor-rail-resizer {
+    display: none;
+  }
 }
 
 @media (max-width: 860px) {
@@ -711,6 +746,7 @@ img {
   }
 
   .editor-rail,
+  .editor-rail-resizer,
   .preview-header {
     display: none !important;
   }

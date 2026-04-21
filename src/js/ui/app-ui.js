@@ -138,6 +138,15 @@ function toInputNumber(value, fallback = 0) {
   return Number.isFinite(next) ? next : fallback;
 }
 
+const ROW_EDITOR_DECIMAL_FIELDS = new Set([
+  "qty",
+  "rate",
+  "taxableAmountOverride",
+  "cgstRate",
+  "sgstRate",
+  "discountPercent"
+]);
+
 function escapeHtml(value) {
   return safeText(value)
     .replaceAll("&", "&amp;")
@@ -232,20 +241,20 @@ function buildRowEditorTable(section, rows) {
           <td class="num">${index + 1}</td>
           <td><input data-row-field="${escapeHtml(section)}.description" value="${escapeHtml(values.description)}"></td>
           <td><input data-row-field="${escapeHtml(section)}.sacCode" value="${escapeHtml(values.sacCode)}"></td>
-          <td><input data-row-field="${escapeHtml(section)}.qty" type="number" min="0" step="0.01" value="${escapeHtml(values.qty)}"></td>
-          <td><input data-row-field="${escapeHtml(section)}.rate" type="number" min="0" step="0.01" value="${escapeHtml(values.rate)}"></td>
+          <td><input data-row-field="${escapeHtml(section)}.qty" type="number" inputmode="decimal" min="0" step="any" value="${escapeHtml(values.qty)}"></td>
+          <td><input data-row-field="${escapeHtml(section)}.rate" type="number" inputmode="decimal" min="0" step="any" value="${escapeHtml(values.rate)}"></td>
           <td class="stack-cell">
             <label class="mini-toggle">
               <input data-row-field="${escapeHtml(section)}.taxableAmountOverrideEnabled" type="checkbox" ${values.taxableAmountOverrideEnabled ? "checked" : ""}>
               <span>Override</span>
             </label>
-            <input data-row-field="${escapeHtml(section)}.taxableAmountOverride" type="number" min="0" step="0.01" value="${escapeHtml(values.taxableAmountOverride ?? "")}" ${values.taxableAmountOverrideEnabled ? "" : "disabled"}>
+            <input data-row-field="${escapeHtml(section)}.taxableAmountOverride" type="number" inputmode="decimal" min="0" step="any" value="${escapeHtml(values.taxableAmountOverride ?? "")}" ${values.taxableAmountOverrideEnabled ? "" : "disabled"}>
           </td>
-          <td><input data-row-field="${escapeHtml(section)}.cgstRate" type="number" min="0" step="0.01" value="${escapeHtml(values.cgstRate)}"></td>
-          <td><input data-row-field="${escapeHtml(section)}.sgstRate" type="number" min="0" step="0.01" value="${escapeHtml(values.sgstRate)}"></td>
+          <td><input data-row-field="${escapeHtml(section)}.cgstRate" type="number" inputmode="decimal" min="0" step="any" value="${escapeHtml(values.cgstRate)}"></td>
+          <td><input data-row-field="${escapeHtml(section)}.sgstRate" type="number" inputmode="decimal" min="0" step="any" value="${escapeHtml(values.sgstRate)}"></td>
           ${
             section === "parts"
-              ? `<td><input data-row-field="${escapeHtml(section)}.discountPercent" type="number" min="0" step="0.01" value="${escapeHtml(values.discountPercent)}"></td>`
+              ? `<td><input data-row-field="${escapeHtml(section)}.discountPercent" type="number" inputmode="decimal" min="0" step="any" value="${escapeHtml(values.discountPercent)}"></td>`
               : ""
           }
           <td class="num">${formatCurrencyInr(computed.taxableAmount)}</td>
@@ -319,6 +328,107 @@ function updateTotalsSummary(root, state) {
   );
 }
 
+function mountEditorRailResizer(root) {
+  const shell = root.querySelector(".workspace-shell");
+  const rail = root.querySelector(".editor-rail");
+  const resizer = root.querySelector(".editor-rail-resizer");
+
+  if (
+    !(shell instanceof HTMLElement) ||
+    !(rail instanceof HTMLElement) ||
+    !(resizer instanceof HTMLElement)
+  ) {
+    return;
+  }
+
+  const singleColumnMq = window.matchMedia("(max-width: 1320px)");
+  const minRailWidth = 320;
+  const minPreviewWidth = 360;
+  const maxRailWidth = 980;
+  let dragStartX = 0;
+  let dragStartWidth = 0;
+
+  function resolveWidth(nextWidth) {
+    const shellWidth = shell.getBoundingClientRect().width;
+    const handleWidth = resizer.getBoundingClientRect().width || 12;
+    const maxByLayout = Math.max(minRailWidth, shellWidth - handleWidth - minPreviewWidth);
+    const boundedMax = Math.min(maxRailWidth, maxByLayout);
+    return Math.round(Math.min(boundedMax, Math.max(minRailWidth, nextWidth)));
+  }
+
+  function setRailWidth(nextWidth) {
+    shell.style.setProperty("--editor-rail-width", `${resolveWidth(nextWidth)}px`);
+  }
+
+  function stopResize(pointerId) {
+    if (typeof pointerId === "number" && resizer.hasPointerCapture(pointerId)) {
+      resizer.releasePointerCapture(pointerId);
+    }
+    shell.classList.remove("is-resizing");
+  }
+
+  resizer.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || singleColumnMq.matches) {
+      return;
+    }
+    dragStartX = event.clientX;
+    dragStartWidth = rail.getBoundingClientRect().width;
+    shell.classList.add("is-resizing");
+    resizer.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+
+  resizer.addEventListener("pointermove", (event) => {
+    if (!resizer.hasPointerCapture(event.pointerId)) {
+      return;
+    }
+    setRailWidth(dragStartWidth + (event.clientX - dragStartX));
+  });
+
+  resizer.addEventListener("pointerup", (event) => {
+    stopResize(event.pointerId);
+  });
+
+  resizer.addEventListener("pointercancel", (event) => {
+    stopResize(event.pointerId);
+  });
+
+  resizer.addEventListener("keydown", (event) => {
+    if (singleColumnMq.matches) {
+      return;
+    }
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
+    }
+    const step = event.shiftKey ? 40 : 16;
+    const direction = event.key === "ArrowLeft" ? -1 : 1;
+    const currentWidth = rail.getBoundingClientRect().width;
+    setRailWidth(currentWidth + direction * step);
+    event.preventDefault();
+  });
+
+  const syncForViewport = () => {
+    if (singleColumnMq.matches) {
+      shell.style.removeProperty("--editor-rail-width");
+      shell.classList.remove("is-resizing");
+      return;
+    }
+    setRailWidth(rail.getBoundingClientRect().width);
+  };
+
+  if (typeof singleColumnMq.addEventListener === "function") {
+    singleColumnMq.addEventListener("change", syncForViewport);
+  } else {
+    singleColumnMq.addListener(syncForViewport);
+  }
+
+  window.addEventListener("resize", () => {
+    if (!singleColumnMq.matches) {
+      setRailWidth(rail.getBoundingClientRect().width);
+    }
+  });
+}
+
 export function mountAppUi(app, root = document) {
   const q = (selector) => root.querySelector(selector);
   const selectedCatalogIds = {
@@ -359,6 +469,28 @@ export function mountAppUi(app, root = document) {
     }
   }
 
+  function commitRowFieldInput(target) {
+    const rowElement = target.closest("[data-row-id]");
+    if (!rowElement) {
+      return;
+    }
+    const rowId = rowElement.dataset.rowId;
+    const [section, field] = target.dataset.rowField.split(".");
+    if (!rowId || !section || !field) {
+      return;
+    }
+
+    const patch = {};
+    if (target.type === "checkbox") {
+      patch[field] = target.checked;
+    } else if (ROW_EDITOR_DECIMAL_FIELDS.has(field)) {
+      patch[field] = target.value === "" ? null : toInputNumber(target.value, 0);
+    } else {
+      patch[field] = target.value;
+    }
+    app.actions.updateInvoiceRow(section, rowId, patch);
+  }
+
   function rerenderPanels(state) {
     syncBoundInputs(root, state);
     q("#parts-catalog-rows").innerHTML = buildCatalogRows(
@@ -387,6 +519,7 @@ export function mountAppUi(app, root = document) {
 
   app.store.subscribe(rerenderPanels);
   rerenderPanels(app.store.getState());
+  mountEditorRailResizer(root);
 
   root.addEventListener("input", (event) => {
     const target = event.target;
@@ -408,21 +541,7 @@ export function mountAppUi(app, root = document) {
     }
 
     if (target.matches("[data-row-field]")) {
-      const rowElement = target.closest("[data-row-id]");
-      if (!rowElement) {
-        return;
-      }
-      const rowId = rowElement.dataset.rowId;
-      const [section, field] = target.dataset.rowField.split(".");
-      const patch = {};
-      if (target.type === "checkbox") {
-        patch[field] = target.checked;
-      } else if (["qty", "rate", "taxableAmountOverride", "cgstRate", "sgstRate", "discountPercent"].includes(field)) {
-        patch[field] = target.value === "" ? null : toInputNumber(target.value, 0);
-      } else {
-        patch[field] = target.value;
-      }
-      app.actions.updateInvoiceRow(section, rowId, patch);
+      return;
     }
   });
 
@@ -439,6 +558,11 @@ export function mountAppUi(app, root = document) {
       } else {
         selectedCatalogIds[section].delete(target.value);
       }
+      return;
+    }
+
+    if (target.matches("[data-row-field]")) {
+      commitRowFieldInput(target);
       return;
     }
 
