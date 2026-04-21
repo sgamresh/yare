@@ -441,7 +441,6 @@ export function mountAppUi(app, root = document) {
   };
 
   const hiddenInputs = {
-    logo: q("#file-logo"),
     signature: q("#file-signature"),
     stamp: q("#file-stamp"),
     importDraft: q("#file-import-draft"),
@@ -587,9 +586,6 @@ export function mountAppUi(app, root = document) {
     }
 
     try {
-      if (target === hiddenInputs.logo && target.files?.[0]) {
-        await app.io.setBusinessLogoFromFile(target.files[0]);
-      }
       if (target === hiddenInputs.signature && target.files?.[0]) {
         await app.io.setSignatureFromFile(target.files[0]);
       }
