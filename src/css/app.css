@@ -156,6 +156,14 @@ img {
   cursor: pointer;
 }
 
+.panel:not([open]) > .panel-summary [data-open-file="logo"] {
+  display: none;
+}
+
+.editor-section:not([open]) > .subsection-summary [data-add-manual] {
+  display: none;
+}
+
 .panel-summary::-webkit-details-marker,
 .subsection-summary::-webkit-details-marker {
   display: none;
